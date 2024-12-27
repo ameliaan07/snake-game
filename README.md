@@ -36,3 +36,34 @@ Play the game at: [https://ameliaan07.github.io/snake-game/](https://ameliaan07.
 ### Local Development
 
 1. Clone the repository: 
+bash
+git clone https://github.com/ameliaan07/snake-game.git
+cd snake-game
+
+
+2. Install dependencies:
+bash
+pip install -r requirements.txt
+
+
+3. Run locally:
+bash
+pygbag main.py
+
+
+4. Visit `http://localhost:8000` in your browser
+
+### Building
+
+Run the build script:
+bash
+./build.sh
+
+## License 📄
+
+MIT License - feel free to use and modify!
+
+## Author 👩‍💻
+
+Created by [ameliaan07](https://github.com/ameliaan07)
+EOL
