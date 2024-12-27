@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body { 
+            background: #333; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #loading-text {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #retry-button {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #3498db;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+        #retry-button:hover {
+            background: #2980b9;
+        }
+        canvas { 
+            border: 2px solid #666;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loader"></div>
+        <div id="loading-text">Loading game... (0%)</div>
+        <button id="retry-button" onclick="location.reload()">Retry Loading</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <script>
+        let loadingText = document.getElementById('loading-text');
+        let retryButton = document.getElementById('retry-button');
+        let loadTimeout;
+
+        // 设置加载超时
+        function startLoadingTimeout() {
+            loadTimeout = setTimeout(() => {
+                loadingText.textContent = 'Loading timed out. Please try again.';
+                retryButton.style.display = 'block';
+            }, 30000); // 30秒超时
+        }
+
+        // 更新加载进度
+        window.addEventListener('load', function() {
+            console.log('Page loaded, initializing game...');
+            startLoadingTimeout();
+        });
+
+        // 监听加载进度
+        window.addEventListener('pygame_progress', function(e) {
+            let progress = Math.round(e.detail * 100);
+            loadingText.textContent = `Loading game... (${progress}%)`;
+        });
+
+        // 游戏加载完成
+        window.addEventListener('pygame_init', function() {
+            clearTimeout(loadTimeout);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('canvas').style.display = 'block';
+        });
+
+        // 错误处理
+        window.addEventListener('error', function(e) {
+            console.error('Error:', e);
+            loadingText.textContent = 'Error loading game. Please try again.';
+            retryButton.style.display = 'block';
+        });
+    </script>
+    <script async src="__target__/snake_game.js" 
+            onerror="loadingText.textContent='Failed to load game script. Please try again.'; retryButton.style.display='block';">
+    </script>
+</body>
+</html> 
