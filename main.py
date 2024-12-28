@@ -18,11 +18,20 @@ GRID_HEIGHT = WINDOW_HEIGHT // GRID_SIZE
 GAME_SPEED = 7
 
 # 颜色定义
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-GRID_COLOR = (40, 40, 40)
+class Colors:
+    BLACK = (0, 0, 0)
+    WHITE = (255, 255, 255)
+    RED = (255, 0, 0)
+    GREEN = (0, 255, 0)
+    DARK_GREEN = (0, 200, 0)
+    LIGHT_GREEN = (150, 255, 150)
+    GRID_COLOR = (40, 40, 40)
+    SNAKE_GRADIENT = [
+        (0, 255, 0),    # 头部颜色
+        (50, 255, 50),  # 身体渐变色
+        (100, 255, 100),
+        (150, 255, 150)
+    ]
 
 class Direction(Enum):
     UP = 1
@@ -104,34 +113,96 @@ class Game:
         if not self.screen:
             return
             
-        self.screen.fill(BLACK)
+        self.screen.fill(Colors.BLACK)
         
         # 绘制网格
         for x in range(0, WINDOW_WIDTH, GRID_SIZE):
-            pygame.draw.line(self.screen, GRID_COLOR, (x, 0), (x, WINDOW_HEIGHT))
+            pygame.draw.line(self.screen, Colors.GRID_COLOR, (x, 0), (x, WINDOW_HEIGHT))
         for y in range(0, WINDOW_HEIGHT, GRID_SIZE):
-            pygame.draw.line(self.screen, GRID_COLOR, (0, y), (WINDOW_WIDTH, y))
+            pygame.draw.line(self.screen, Colors.GRID_COLOR, (0, y), (WINDOW_WIDTH, y))
         
         # 绘制蛇
-        for segment in self.snake.body:
+        snake_length = len(self.snake.body)
+        for i, segment in enumerate(self.snake.body):
             x = segment[0] * GRID_SIZE
             y = segment[1] * GRID_SIZE
-            pygame.draw.rect(self.screen, GREEN,
-                           (x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2))
+            
+            if i == 0:  # 蛇头
+                # 绘制圆形蛇头
+                center = (x + GRID_SIZE // 2, y + GRID_SIZE // 2)
+                pygame.draw.circle(self.screen, Colors.DARK_GREEN, center, GRID_SIZE // 2 - 1)
+                
+                # 添加眼睛
+                eye_color = Colors.WHITE
+                eye_radius = GRID_SIZE // 8
+                eye_offset = GRID_SIZE // 4
+                
+                # 根据方向调整眼睛位置
+                if self.snake.direction == Direction.RIGHT:
+                    left_eye = (x + GRID_SIZE - eye_offset, y + eye_offset)
+                    right_eye = (x + GRID_SIZE - eye_offset, y + GRID_SIZE - eye_offset)
+                elif self.snake.direction == Direction.LEFT:
+                    left_eye = (x + eye_offset, y + eye_offset)
+                    right_eye = (x + eye_offset, y + GRID_SIZE - eye_offset)
+                elif self.snake.direction == Direction.UP:
+                    left_eye = (x + eye_offset, y + eye_offset)
+                    right_eye = (x + GRID_SIZE - eye_offset, y + eye_offset)
+                else:  # DOWN
+                    left_eye = (x + eye_offset, y + GRID_SIZE - eye_offset)
+                    right_eye = (x + GRID_SIZE - eye_offset, y + GRID_SIZE - eye_offset)
+                
+                pygame.draw.circle(self.screen, eye_color, left_eye, eye_radius)
+                pygame.draw.circle(self.screen, eye_color, right_eye, eye_radius)
+                
+            else:  # 蛇身
+                # 创建渐变效果
+                color_index = min(i, len(Colors.SNAKE_GRADIENT) - 1)
+                color = Colors.SNAKE_GRADIENT[color_index]
+                
+                # 绘制圆角矩形作为身体段
+                rect = pygame.Rect(x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2)
+                pygame.draw.rect(self.screen, color, rect, border_radius=GRID_SIZE // 4)
+                
+                # 添加光晕效果
+                if i < snake_length - 1:
+                    next_segment = self.snake.body[i + 1]
+                    mid_x = (segment[0] + next_segment[0]) * GRID_SIZE // 2
+                    mid_y = (segment[1] + next_segment[1]) * GRID_SIZE // 2
+                    pygame.draw.circle(self.screen, color, (mid_x + GRID_SIZE//2, mid_y + GRID_SIZE//2), 
+                                     GRID_SIZE // 3)
         
-        # 绘制食物
+        # 绘制食物（苹果样式）
         x = self.food[0] * GRID_SIZE
         y = self.food[1] * GRID_SIZE
-        pygame.draw.rect(self.screen, RED,
-                        (x + 1, y + 1, GRID_SIZE - 2, GRID_SIZE - 2))
+        apple_color = Colors.RED
+        
+        # 主体
+        center = (x + GRID_SIZE // 2, y + GRID_SIZE // 2)
+        pygame.draw.circle(self.screen, apple_color, center, GRID_SIZE // 2 - 2)
+        
+        # 叶子
+        leaf_color = (0, 180, 0)
+        leaf_points = [
+            (x + GRID_SIZE//2, y + 2),
+            (x + GRID_SIZE//2 + 4, y - 2),
+            (x + GRID_SIZE//2 + 2, y + 3)
+        ]
+        pygame.draw.polygon(self.screen, leaf_color, leaf_points)
         
         # 绘制分数
         font = pygame.font.Font(None, 36)
-        score_text = font.render(f'Score: {self.score}', True, WHITE)
+        score_text = font.render(f'Score: {self.score}', True, Colors.WHITE)
         self.screen.blit(score_text, (10, 10))
         
         if self.game_over:
-            game_over_text = font.render('Game Over! Press R to Restart', True, WHITE)
+            # 创建半透明遮罩
+            overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+            overlay.fill((0, 0, 0))
+            overlay.set_alpha(128)
+            self.screen.blit(overlay, (0, 0))
+            
+            # 游戏结束文本
+            game_over_text = font.render('Game Over! Press R to Restart', True, Colors.WHITE)
             text_rect = game_over_text.get_rect(center=(WINDOW_WIDTH/2, WINDOW_HEIGHT/2))
             self.screen.blit(game_over_text, text_rect)
         
